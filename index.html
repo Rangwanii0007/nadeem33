@@ -1,34 +1,212 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SnapVideo Downloader</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TikTok No Watermark Downloader</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f7f7f7; }
-    input, button { padding: 10px; width: 80%; max-width: 400px; margin: 10px; }
-    #result img { margin-top: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    :root {
+      --primary: #FE2C55;
+      --secondary: #25F4EE;
+      --dark: #121212;
+      --light: #FFFFFF;
+      --gray: #AAAAAA;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--dark);
+      color: var(--light);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .input-group {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    input {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      border-radius: 8px 0 0 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--light);
+    }
+    button {
+      padding: 15px 25px;
+      border: none;
+      border-radius: 0 8px 8px 0;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .result {
+      display: none;
+      margin-top: 25px;
+      text-align: center;
+    }
+    video {
+      width: 100%;
+      max-height: 500px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    a {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 12px 25px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    a:hover {
+      transform: translateY(-3px);
+    }
+    .loading {
+      text-align: center;
+      display: none;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 15px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (max-width: 600px) {
+      .card {
+        padding: 20px;
+      }
+      .input-group {
+        flex-direction: column;
+      }
+      input, button {
+        border-radius: 8px;
+        width: 100%;
+      }
+      button {
+        margin-top: 10px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>📥 SnapDownloader</h1>
-  <input type="text" id="url" placeholder="Paste video link here" />
-  <button onclick="download()">Download</button>
-  <div id="result"></div>
+  <div class="container">
+    <div class="card">
+      <h1><i class="fab fa-tiktok"></i> TikTok Downloader</h1>
+      
+      <div class="input-group">
+        <input type="text" id="urlInput" placeholder="Paste TikTok video URL...">
+        <button id="downloadBtn"><i class="fas fa-download"></i> Download</button>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Processing video...</p>
+      </div>
+
+      <div class="result" id="result">
+        <video controls id="videoPlayer"></video>
+        <a href="#" id="downloadLink"><i class="fas fa-download"></i> Download Without Watermark</a>
+      </div>
+    </div>
+  </div>
 
   <script>
-    async function download() {
-      const url = document.getElementById('url').value;
-      const res = await fetch('/download', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ url })
-      });
-      const data = await res.json();
-      document.getElementById('result').innerHTML = `
-        <h3>${data.title}</h3>
-        <img src="${data.thumbnail}" width="300" />
-        <p><a href="${data.download_url}" download>⬇️ Click here to download</a></p>
-      `;
-    }
+    const urlInput = document.getElementById('urlInput');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const downloadLink = document.getElementById('downloadLink');
+
+    downloadBtn.addEventListener('click', async () => {
+      const url = urlInput.value.trim();
+      
+      if (!url || !url.includes('tiktok.com')) {
+        alert('Please enter a valid TikTok URL');
+        return;
+      }
+
+      // Show loading, hide result
+      loading.style.display = 'block';
+      result.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/download', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          videoPlayer.src = data.videoUrl;
+          downloadLink.href = data.videoUrl;
+          downloadLink.setAttribute('download', 'tiktok-no-watermark.mp4');
+          result.style.display = 'block';
+        } else {
+          alert(data.message || 'Download failed. Try another video.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+      } finally {
+        loading.style.display = 'none';
+      }
+    });
+
+    // Auto-paste detection
+    urlInput.addEventListener('paste', (e) => {
+      setTimeout(() => {
+        if (urlInput.value.includes('tiktok.com')) {
+          downloadBtn.click();
+        }
+      }, 100);
+    });
   </script>
 </body>
 </html>
